@@ -2322,7 +2322,25 @@ out:
 static char *rbd_dev_v2_snap_info(struct rbd_device *rbd_dev, u32 which,
 		u64 *snap_size, u64 *snap_features)
 {
-	return rbd_dev_v2_snap_name(rbd_dev, which);
+	char *snap_name;
+	__le64 snap_id;
+	u8 order;
+	int ret;
+
+	snap_name = rbd_dev_v2_snap_name(rbd_dev, which);
+	if (IS_ERR(snap_name))
+		return snap_name;
+
+	snap_id = rbd_dev->header.snapc->snaps[which];
+	ret = _rbd_dev_v2_snap_size(rbd_dev, snap_id, &order, snap_size);
+	if (ret)
+		goto out_err;
+
+	return snap_name;
+out_err:
+	kfree(snap_name);
+
+	return ERR_PTR(ret);
 }
 
 static char *rbd_dev_snap_info(struct rbd_device *rbd_dev, u32 which,
