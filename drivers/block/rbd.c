@@ -2335,6 +2335,9 @@ static char *rbd_dev_v2_snap_info(struct rbd_device *rbd_dev, u32 which,
 	ret = _rbd_dev_v2_snap_size(rbd_dev, snap_id, &order, snap_size);
 	if (ret)
 		goto out_err;
+	ret = _rbd_dev_v2_snap_features(rbd_dev, snap_id, snap_features);
+	if (ret)
+		goto out_err;
 
 	return snap_name;
 out_err:
