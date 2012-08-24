@@ -519,18 +519,19 @@ static int rbd_header_from_disk(struct rbd_image_header *header,
 				 struct rbd_image_header_ondisk *ondisk)
 {
 	u32 snap_count;
+	size_t len;
 	size_t size;
 
 	memset(header, 0, sizeof (*header));
 
 	snap_count = le32_to_cpu(ondisk->snap_count);
 
-	size = sizeof (ondisk->block_name) + 1;
-	header->object_prefix = kmalloc(size, GFP_KERNEL);
+	len = strnlen(ondisk->block_name, sizeof (ondisk->block_name));
+	header->object_prefix = kmalloc(len + 1, GFP_KERNEL);
 	if (!header->object_prefix)
 		return -ENOMEM;
-	memcpy(header->object_prefix, ondisk->block_name, size - 1);
-	header->object_prefix[size - 1] = '\0';
+	memcpy(header->object_prefix, ondisk->block_name, len);
+	header->object_prefix[len] = '\0';
 
 	if (snap_count) {
 		header->snap_names_len = le64_to_cpu(ondisk->snap_names_len);
