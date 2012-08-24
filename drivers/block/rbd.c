@@ -616,8 +616,6 @@ static int rbd_header_set_snap(struct rbd_device *rbd_dev, u64 *size)
 {
 	int ret;
 
-	down_write(&rbd_dev->header_rwsem);
-
 	if (!memcmp(rbd_dev->snap_name, RBD_SNAP_HEAD_NAME,
 		    sizeof (RBD_SNAP_HEAD_NAME))) {
 		rbd_dev->snap_id = CEPH_NOSNAP;
@@ -639,7 +637,6 @@ static int rbd_header_set_snap(struct rbd_device *rbd_dev, u64 *size)
 
 	ret = 0;
 done:
-	up_write(&rbd_dev->header_rwsem);
 	return ret;
 }
 
@@ -1855,7 +1852,9 @@ static int rbd_init_disk(struct rbd_device *rbd_dev)
 	if (rc)
 		return rc;
 
+	down_write(&rbd_dev->header_rwsem);
 	rc = rbd_header_set_snap(rbd_dev, &total_size);
+	up_write(&rbd_dev->header_rwsem);
 	if (rc)
 		return rc;
 
