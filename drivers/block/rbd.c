@@ -198,7 +198,7 @@ static DEFINE_SPINLOCK(rbd_dev_list_lock);
 static LIST_HEAD(rbd_client_list);		/* clients */
 static DEFINE_SPINLOCK(rbd_client_list_lock);
 
-static int __rbd_init_snaps_header(struct rbd_device *rbd_dev);
+static int rbd_dev_snap_devs_update(struct rbd_device *rbd_dev);
 static void rbd_dev_release(struct device *dev);
 static ssize_t rbd_snap_add(struct device *dev,
 			    struct device_attribute *attr,
@@ -1816,7 +1816,7 @@ static int __rbd_refresh_header(struct rbd_device *rbd_dev, u64 *hver)
 	WARN_ON(strcmp(rbd_dev->header.object_prefix, h.object_prefix));
 	kfree(h.object_prefix);
 
-	ret = __rbd_init_snaps_header(rbd_dev);
+	ret = rbd_dev_snap_devs_update(rbd_dev);
 
 	up_write(&rbd_dev->header_rwsem);
 
@@ -1848,7 +1848,7 @@ static int rbd_init_disk(struct rbd_device *rbd_dev)
 		return rc;
 
 	/* no need to lock here, as rbd_dev is not registered yet */
-	rc = __rbd_init_snaps_header(rbd_dev);
+	rc = rbd_dev_snap_devs_update(rbd_dev);
 	if (rc)
 		return rc;
 
@@ -2153,7 +2153,7 @@ err:
  * snapshot id, highest id first.  (Snapshots in the rbd_dev's list
  * are also maintained in that order.)
  */
-static int __rbd_init_snaps_header(struct rbd_device *rbd_dev)
+static int rbd_dev_snap_devs_update(struct rbd_device *rbd_dev)
 {
 	struct ceph_snap_context *snapc = rbd_dev->header.snapc;
 	const u32 snap_count = snapc->num_snaps;
