@@ -593,10 +593,10 @@ out_err:
 	return -ENOMEM;
 }
 
-static int snap_by_name(struct rbd_image_header *header, const char *snap_name,
-			u64 *snap_id, u64 *size)
+static int snap_by_name(struct rbd_device *rbd_dev, const char *snap_name)
 {
 	int i;
+	struct rbd_image_header *header = &rbd_dev->header;
 	char *p = header->snap_names;
 
 	for (i = 0; i < header->snapc->num_snaps; i++) {
@@ -604,8 +604,9 @@ static int snap_by_name(struct rbd_image_header *header, const char *snap_name,
 
 			/* Found it.  Pass back its id and/or size */
 
-			*snap_id = header->snapc->snaps[i];
-			*size = header->snap_sizes[i];
+			rbd_dev->mapping.snap_id = header->snapc->snaps[i];
+			rbd_dev->mapping.size = header->snap_sizes[i];
+
 			return i;
 		}
 		p += strlen(p) + 1;	/* Skip ahead to the next name */
@@ -624,9 +625,7 @@ static int rbd_header_set_snap(struct rbd_device *rbd_dev, char *snap_name)
 		rbd_dev->mapping.snap_exists = false;
 		rbd_dev->mapping.read_only = rbd_dev->rbd_opts.read_only;
 	} else {
-		ret = snap_by_name(&rbd_dev->header, snap_name,
-					&rbd_dev->mapping.snap_id,
-					&rbd_dev->mapping.size);
+		ret = snap_by_name(rbd_dev, snap_name);
 		if (ret < 0)
 			goto done;
 		rbd_dev->mapping.snap_exists = true;
