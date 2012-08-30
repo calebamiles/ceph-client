@@ -79,13 +79,15 @@
  * block device image metadata (in-memory version)
  */
 struct rbd_image_header {
-	u64 image_size;
+	/* These four fields never change for a given rbd image */
 	char *object_prefix;
 	__u8 obj_order;
 	__u8 crypt_type;
 	__u8 comp_type;
-	struct ceph_snap_context *snapc;
 
+	/* The remaining fields need to be updated occasionally */
+	u64 image_size;
+	struct ceph_snap_context *snapc;
 	char *snap_names;
 	u64 *snap_sizes;
 
@@ -558,13 +560,13 @@ static int rbd_header_from_disk(struct rbd_image_header *header,
 		header->snap_sizes = NULL;
 	}
 
-	header->image_size = le64_to_cpu(ondisk->image_size);
 	header->obj_order = ondisk->options.order;
 	header->crypt_type = ondisk->options.crypt_type;
 	header->comp_type = ondisk->options.comp_type;
 
 	/* Allocate and fill in the snapshot context */
 
+	header->image_size = le64_to_cpu(ondisk->image_size);
 	size = sizeof (struct ceph_snap_context);
 	size += snap_count * sizeof (header->snapc->snaps[0]);
 	header->snapc = kzalloc(size, GFP_KERNEL);
