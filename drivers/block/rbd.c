@@ -2102,6 +2102,7 @@ static int rbd_dev_snaps_update(struct rbd_device *rbd_dev)
 	struct list_head *links = head->next;
 	u32 index = 0;
 
+	dout("snap_count = %u\n", snap_count);
 	while (index < snap_count || links != head) {
 		u64 snap_id;
 		struct rbd_snap *snap;
@@ -2109,10 +2110,15 @@ static int rbd_dev_snaps_update(struct rbd_device *rbd_dev)
 		u64 snap_size = 0;
 		u64 snap_features = 0;
 
+		dout("  index = %u\n", index);
 		snap_id = index < snap_count ? snapc->snaps[index]
 					     : CEPH_NOSNAP;
 		snap = links != head ? list_entry(links, struct rbd_snap, node)
 				     : NULL;
+		dout("  snap_id = %llu, snap = %p\n",
+			(unsigned long long) snap_id, snap);
+		if (snap)
+			dout("      snap->id = %llu\n", snap->id);
 		BUG_ON(snap && snap->id == CEPH_NOSNAP);
 
 		if (snap_id == CEPH_NOSNAP || (snap && snap->id > snap_id)) {
@@ -2120,6 +2126,7 @@ static int rbd_dev_snaps_update(struct rbd_device *rbd_dev)
 
 			/* Existing snapshot not in the new snap context */
 
+			dout("REMOVING  snap->id = %llu\n", snap->id);
 			if (rbd_dev->mapping.snap_id == snap->id)
 				rbd_dev->mapping.snap_exists = false;
 			__rbd_remove_snap_dev(snap);
@@ -2140,6 +2147,7 @@ static int rbd_dev_snaps_update(struct rbd_device *rbd_dev)
 
 			/* We haven't seen this snapshot before */
 
+			dout("ADDING    snap_id = %llu\n", snap_id);
 			new_snap = __rbd_add_snap_dev(rbd_dev, snap_name,
 					snap_id, snap_size, snap_features);
 			if (IS_ERR(new_snap))
@@ -2160,6 +2168,7 @@ static int rbd_dev_snaps_update(struct rbd_device *rbd_dev)
 
 			/* Done with this list entry; advance */
 
+			dout("SKIPPING  snap_id = %llu\n", snap_id);
 			links = links->next;
 		}
 
