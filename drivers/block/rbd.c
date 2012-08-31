@@ -262,6 +262,7 @@ static void rbd_put_dev(struct rbd_device *rbd_dev)
 	put_device(&rbd_dev->dev);
 }
 
+static int rbd_dev_v2_snapc_refresh(struct rbd_device *rbd_dev, u64 *hver);
 static int rbd_refresh_header(struct rbd_device *rbd_dev, u64 *hver);
 
 static int rbd_open(struct block_device *bdev, fmode_t mode)
@@ -1747,8 +1748,12 @@ static int rbd_refresh_header(struct rbd_device *rbd_dev, u64 *hver)
 {
 	int ret;
 
+	BUG_ON(!rbd_image_format_valid(rbd_dev->image_format));
 	mutex_lock_nested(&ctl_mutex, SINGLE_DEPTH_NESTING);
-	ret = __rbd_refresh_header(rbd_dev, hver);
+	if (rbd_dev->image_format == 1)
+		ret = __rbd_refresh_header(rbd_dev, hver);
+	else
+		ret = rbd_dev_v2_snapc_refresh(rbd_dev, hver);
 	mutex_unlock(&ctl_mutex);
 
 	return ret;
@@ -2356,6 +2361,27 @@ static char *rbd_dev_snap_info(struct rbd_device *rbd_dev, u32 which,
 		return rbd_dev_v2_snap_info(rbd_dev, which,
 					snap_size, snap_features);
 	return ERR_PTR(-EINVAL);
+}
+
+static int rbd_dev_v2_snapc_refresh(struct rbd_device *rbd_dev, u64 *hver)
+{
+	int ret;
+
+	down_write(&rbd_dev->header_rwsem);
+	ret = rbd_dev_v2_snap_context(rbd_dev, hver);
+	dout("rbd_dev_v2_snap_context returned %d\n", ret);
+	if (ret)
+		goto out;
+	ret = rbd_dev_snaps_update(rbd_dev);
+	dout("rbd_dev_snaps_update returned %d\n", ret);
+	if (ret)
+		goto out;
+	ret = rbd_dev_snaps_register(rbd_dev);
+	dout("rbd_dev_snaps_register returned %d\n", ret);
+out:
+	up_write(&rbd_dev->header_rwsem);
+
+	return 0;
 }
 
 /*
@@ -2979,7 +3005,6 @@ static ssize_t rbd_add(struct bus_type *bus,
 	rc = rbd_dev_probe(rbd_dev);
 	if (rc < 0)
 		goto err_out_client;
-	BUG_ON(!rbd_image_format_valid(rbd_dev->image_format));
 
 	rc = rbd_dev_snaps_update(rbd_dev);
 	if (rc)
