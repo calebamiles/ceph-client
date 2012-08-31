@@ -523,11 +523,11 @@ static int rbd_header_from_disk(struct rbd_image_header *header,
 
 	snap_count = le32_to_cpu(ondisk->snap_count);
 
-	len = strnlen(ondisk->block_name, sizeof (ondisk->block_name));
+	len = strnlen(ondisk->object_prefix, sizeof (ondisk->object_prefix));
 	header->object_prefix = kmalloc(len + 1, GFP_KERNEL);
 	if (!header->object_prefix)
 		return -ENOMEM;
-	memcpy(header->object_prefix, ondisk->block_name, len);
+	memcpy(header->object_prefix, ondisk->object_prefix, len);
 	header->object_prefix[len] = '\0';
 
 	if (snap_count) {
