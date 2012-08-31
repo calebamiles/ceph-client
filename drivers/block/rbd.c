@@ -2919,8 +2919,8 @@ static int rbd_dev_v2_probe(struct rbd_device *rbd_dev)
 
 	rbd_dev->image_format = 2;
 
-	/* return 0; */
-	return -ENOTSUPP;
+	return 0;
+	/* return -ENOTSUPP; */
 out_err:
 	kfree(rbd_dev->header_name);
 	rbd_dev->header_name = NULL;
