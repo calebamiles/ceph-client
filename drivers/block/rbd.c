@@ -2201,8 +2201,8 @@ static int rbd_dev_snaps_register(struct rbd_device *rbd_dev)
 	struct rbd_snap *snap;
 	int ret = 0;
 
-	if (!device_is_registered(&rbd_dev->dev))
-		return 0;
+	if (WARN_ON(!device_is_registered(&rbd_dev->dev)))
+		return -EIO;
 
 	list_for_each_entry(snap, &rbd_dev->snaps, node) {
 		if (!rbd_snap_registered(snap)) {
