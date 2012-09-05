@@ -2147,25 +2147,50 @@ static int _rbd_dev_v2_snap_features(struct rbd_device *rbd_dev, u64 snap_id,
 	__le64 features = 0;
 	int ret;
 
+	dout("  XXX calling rbd_req_sync_exec(%p, get_features)\n", rbd_dev);
 	ret = rbd_req_sync_exec(rbd_dev, rbd_dev->header_name,
 				"rbd", "get_features",
 				(char *) &snapid, sizeof (snapid),
 				(char *) &features, sizeof (features),
 				CEPH_OSD_FLAG_READ, NULL);
+	dout("  XXX rbd_dev is %p returned %d\n", rbd_dev, ret);
+	dout("  XXX snap_features @ %p\n", snap_features);
+	dout("  XXX raw features 0x%llx\n", features);
 	if (ret < 0)
 		return ret;
 	*snap_features = le64_to_cpu(features);
 
-	dout("  rbd_req_sync_exec(features[%lluu]) -> %d\n",
+	dout("  XXX rbd_dev is %p\n", rbd_dev);
+	dout("  XXX snap_features @ %p\n", snap_features);
+	dout("  XXX raw snap_features 0x%llx\n", *snap_features);
+
+	dout("  rbd_req_sync_exec(features[%llu]) -> %d\n",
 				(unsigned long long) snap_id, ret);
+
+	dout("  XXX rbd_dev is %p\n", rbd_dev);
+	dout("  XXX snap_features @ %p\n", snap_features);
+	dout("  XXX raw snap_features 0x%llx\n", *snap_features);
 
 	return 0;
 }
 
 static int rbd_dev_v2_features(struct rbd_device *rbd_dev)
 {
-	return _rbd_dev_v2_snap_features(rbd_dev, CEPH_NOSNAP,
+	int ret;
+
+	dout("  XXX rbd_dev is %p\n", rbd_dev);
+	dout("  XXX &rbd_dev->header is %p\n", &rbd_dev->header);
+	dout("  XXX &rbd_dev->header.features is %p\n", &rbd_dev->header.features);
+	ret = _rbd_dev_v2_snap_features(rbd_dev, CEPH_NOSNAP,
 						&rbd_dev->header.features);
+	dout("  XXX rbd_dev is %p\n", rbd_dev);
+	dout("  XXX &rbd_dev->header is %p\n", &rbd_dev->header);
+	dout("  XXX &rbd_dev->header.features is %p\n",
+		&rbd_dev->header.features);
+	dout("  XXX rbd_dev->header.features is 0x%llx\n",
+		rbd_dev->header.features);
+
+	return ret;
 }
 
 static int rbd_dev_v2_object_prefix(struct rbd_device *rbd_dev)
