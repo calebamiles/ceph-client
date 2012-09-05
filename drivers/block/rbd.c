@@ -2890,18 +2890,21 @@ static int rbd_dev_v2_probe(struct rbd_device *rbd_dev)
 	/* Get the size and object order for the image */
 
 	ret = rbd_dev_v2_image_size(rbd_dev);
+	dout("   XXX rbd_dev_v2_image_size(%p) returned %d\n", rbd_dev, ret);
 	if (ret < 0)
 		goto out_err;
 
 	/* Get the object prefix (a.k.a. block_name) for the image */
 
 	ret = rbd_dev_v2_object_prefix(rbd_dev);
+	dout("   XXX rbd_dev_v2_object_prefix(%p) returned %d\n", rbd_dev, ret);
 	if (ret < 0)
 		goto out_err;
 
 	/* Get the features for the image */
 
 	ret = rbd_dev_v2_features(rbd_dev);
+	dout("   XXX rbd_dev_v2_features(%p) returned %d\n", rbd_dev, ret);
 	if (ret < 0)
 		goto out_err;
 
