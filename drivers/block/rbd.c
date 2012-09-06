@@ -2144,21 +2144,24 @@ static int _rbd_dev_v2_snap_features(struct rbd_device *rbd_dev, u64 snap_id,
 		u64 *snap_features)
 {
 	__le64 snapid = cpu_to_le64(snap_id);
-	__le64 features = 0;
+	struct {
+		__le64 features;
+		__le64 incompat;
+	} features_buf = { 0 };
 	int ret;
 
 	dout("  XXX calling rbd_req_sync_exec(%p, get_features)\n", rbd_dev);
 	ret = rbd_req_sync_exec(rbd_dev, rbd_dev->header_name,
 				"rbd", "get_features",
 				(char *) &snapid, sizeof (snapid),
-				(char *) &features, sizeof (features),
+				(char *) &features_buf, sizeof (features_buf),
 				CEPH_OSD_FLAG_READ, NULL);
 	dout("  XXX rbd_dev is %p returned %d\n", rbd_dev, ret);
 	dout("  XXX snap_features @ %p\n", snap_features);
-	dout("  XXX raw features 0x%llx\n", features);
+	dout("  XXX raw features 0x%llx\n", features_buf.features);
 	if (ret < 0)
 		return ret;
-	*snap_features = le64_to_cpu(features);
+	*snap_features = le64_to_cpu(features_buf.features);
 
 	dout("  XXX rbd_dev is %p\n", rbd_dev);
 	dout("  XXX snap_features @ %p\n", snap_features);
