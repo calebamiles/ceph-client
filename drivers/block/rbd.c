@@ -3036,8 +3036,6 @@ static ssize_t rbd_add(struct bus_type *bus,
 	INIT_LIST_HEAD(&rbd_dev->snaps);
 	init_rwsem(&rbd_dev->header_rwsem);
 
-	down_write(&rbd_dev->header_rwsem);
-
 	/* parse add command */
 	snap_name = rbd_add_parse_args(rbd_dev, buf,
 				&mon_addrs, &mon_addrs_size, options, count);
@@ -3065,7 +3063,9 @@ static ssize_t rbd_add(struct bus_type *bus,
 	if (rc)
 		goto err_out_header;
 
+	down_write(&rbd_dev->header_rwsem);
 	rc = rbd_dev_set_mapping(rbd_dev, snap_name);
+	up_write(&rbd_dev->header_rwsem);
 	if (rc)
 		goto err_out_header;
 
@@ -3107,8 +3107,6 @@ static ssize_t rbd_add(struct bus_type *bus,
 	if (rc)
 		goto err_out_unlock;
 
-	up_write(&rbd_dev->header_rwsem);
-
 	/* Everything's ready.  Announce the disk to the world. */
 
 	add_disk(rbd_dev->disk);
@@ -3119,7 +3117,6 @@ static ssize_t rbd_add(struct bus_type *bus,
 	return count;
 
 err_out_unlock:
-	up_write(&rbd_dev->header_rwsem);
 	/* this will also clean up rest of rbd_dev stuff */
 
 	rbd_bus_del_dev(rbd_dev);
@@ -3142,7 +3139,6 @@ err_out_args:
 	kfree(rbd_dev->mapping.snap_name);
 	kfree(rbd_dev->image_name);
 	kfree(rbd_dev->pool_name);
-	up_write(&rbd_dev->header_rwsem);
 err_out_mem:
 	kfree(rbd_dev);
 	kfree(options);
